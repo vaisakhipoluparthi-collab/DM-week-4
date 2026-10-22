@@ -1,0 +1,367 @@
+mport weka.clusterers.SimpleKMeans;
+import weka.clusterers.EM;
+import weka.clusterers.DBSCAN;
+import weka.classifiers.trees.J48;
+import weka.classifiers.trees.RandomForest;
+import weka.classifiers.rules.ZeroR;
+import weka.classifiers.Evaluation;
+import weka.associations.Apriori;
+import weka.associations.FPGrowth;
+import weka.core.Instances;
+import weka.core.converters.ConverterUtils.DataSource;
+import java.util.Random;
+public class WekaClusteringKnowledgeFlow {
+    // =========================================================
+    // LOAD DATASET
+    // =========================================================
+    public static Instances loadDataset(String fileName)
+            throws Exception {
+        DataSource source =
+                new DataSource(fileName);
+        Instances data =
+                source.getDataSet();
+        if (data.classIndex() == -1) {
+            data.setClassIndex(
+                    data.numAttributes() - 1
+            );
+        }
+        System.out.println("\n====================================");
+        System.out.println("DATASET: " + fileName);
+        System.out.println("====================================");
+        System.out.println(
+                "Instances: " +
+                data.numInstances()
+        );
+        System.out.println(
+                "Attributes: " +
+                data.numAttributes()
+        );
+        return data;
+    }
+    // =========================================================
+    // SIMPLE K-MEANS
+    // =========================================================
+    public static void runKMeans(
+            Instances data,
+            int k)
+            throws Exception {
+        SimpleKMeans kmeans =
+                new SimpleKMeans();
+        kmeans.setNumClusters(k);
+        kmeans.setSeed(10);
+        kmeans.setPreserveInstancesOrder(true);
+        kmeans.setDisplayStdDevs(true);
+        kmeans.buildClusterer(data);
+        System.out.println("\n------------------------------------");
+        System.out.println("K-MEANS : k = " + k);
+        System.out.println("------------------------------------");
+        System.out.println(
+                "SSE = " +
+                kmeans.getSquaredError()
+        );
+        System.out.println("\nCentroids:");
+        System.out.println(
+                kmeans.getClusterCentroids()
+        );
+        System.out.println(
+                "\nClustered Instances:"
+        );
+        System.out.println(
+                kmeans
+        );
+    }
+    // =========================================================
+    // EM CLUSTERING
+    // =========================================================
+    public static void runEM(
+            Instances data)
+            throws Exception {
+        EM em = new EM();
+        // Automatically determine number of clusters
+        em.setNumClusters(-1);
+        em.buildClusterer(data);
+        System.out.println("\n------------------------------------");
+        System.out.println("EM CLUSTERING");
+        System.out.println("------------------------------------");
+        System.out.println(em);
+        System.out.println(
+                "Number of clusters: " +
+                em.numberOfClusters()
+        );
+    }
+    // =========================================================
+    // DBSCAN
+    // =========================================================
+    public static void runDBSCAN(
+            Instances data)
+            throws Exception {
+        DBSCAN dbscan =
+                new DBSCAN();
+        dbscan.setEpsilon(0.5);
+        dbscan.setMinPoints(5);
+        dbscan.buildClusterer(data);
+        System.out.println("\n------------------------------------");
+        System.out.println("DBSCAN");
+        System.out.println("------------------------------------");
+        System.out.println(dbscan);
+        System.out.println(
+                "Number of clusters: " +
+                dbscan.numberOfClusters()
+        );
+    }
+    // =========================================================
+    // APRIORI
+    // =========================================================
+    public static void runApriori(
+            Instances data)
+            throws Exception {
+        Apriori apriori =
+                new Apriori();
+        apriori.setLowerBoundMinSupport(
+                0.1
+        );
+        apriori.setMinMetric(
+                0.8
+        );
+        apriori.setNumRules(10);
+        apriori.buildAssociations(data);
+        System.out.println("\n------------------------------------");
+        System.out.println("APRIORI ASSOCIATION RULES");
+        System.out.println("------------------------------------");
+        System.out.println(apriori);
+    }
+    // =========================================================
+    // FP-GROWTH
+    // =========================================================
+    public static void runFPGrowth(
+            Instances data)
+            throws Exception {
+        FPGrowth fp =
+                new FPGrowth();
+        fp.setLowerBoundMinSupport(
+                0.1
+        );
+        fp.setMinMetric(
+                0.8
+        );
+        fp.setNumRulesToFind(
+                10
+        );
+        fp.buildAssociations(data);
+        System.out.println("\n------------------------------------");
+        System.out.println("FP-GROWTH ASSOCIATION RULES");
+        System.out.println("------------------------------------");
+        System.out.println(fp);
+    }
+    // =========================================================
+    // J48 CROSS VALIDATION
+    // =========================================================
+    public static void runJ48(
+            Instances data)
+            throws Exception {
+        J48 j48 =
+                new J48();
+        Evaluation evaluation =
+                new Evaluation(data);
+        evaluation.crossValidateModel(
+                j48,
+                data,
+                10,
+                new Random(10)
+        );
+        j48.buildClassifier(data);
+        System.out.println("\n------------------------------------");
+        System.out.println("J48 - 10 FOLD CROSS VALIDATION");
+        System.out.println("------------------------------------");
+        System.out.println(
+                "Accuracy: " +
+                evaluation.pctCorrect() +
+                "%"
+        );
+        System.out.println(
+                "Kappa: " +
+                evaluation.kappa()
+        );
+        System.out.println("\nConfusion Matrix:");
+        System.out.println(
+                evaluation.toMatrixString()
+        );
+        System.out.println("\nJ48 Tree:");
+        System.out.println(j48);
+    }
+    // =========================================================
+    // RANDOM FOREST
+    // =========================================================
+    public static void runRandomForest(
+            Instances data)
+            throws Exception {
+        RandomForest rf =
+                new RandomForest();
+        rf.setNumIterations(100);
+        Evaluation evaluation =
+                new Evaluation(data);
+        evaluation.crossValidateModel(
+                rf,
+                data,
+                10,
+                new Random(10)
+        );
+        System.out.println("\n------------------------------------");
+        System.out.println("RANDOM FOREST");
+        System.out.println("------------------------------------");
+        System.out.println(
+                "Accuracy: " +
+                evaluation.pctCorrect() +
+                "%"
+        );
+        System.out.println(
+                "Kappa: " +
+                evaluation.kappa()
+        );
+        System.out.println(
+                "ROC Area: " +
+                evaluation.weightedAreaUnderROC()
+        );
+    }
+    // =========================================================
+    // ZEROR
+    // =========================================================
+    public static void runZeroR(
+            Instances data)
+            throws Exception {
+        ZeroR zeroR =
+                new ZeroR();
+        Evaluation evaluation =
+                new Evaluation(data);
+        evaluation.crossValidateModel(
+                zeroR,
+                data,
+                10,
+                new Random(10)
+        );
+        System.out.println("\n------------------------------------");
+        System.out.println("ZEROR BASELINE");
+        System.out.println("------------------------------------");
+        System.out.println(
+                "Accuracy: " +
+                evaluation.pctCorrect() +
+                "%"
+        );
+        System.out.println(
+                "Kappa: " +
+                evaluation.kappa()
+        );
+        System.out.println(
+                "\nModel:"
+        );
+        zeroR.buildClassifier(data);
+        System.out.println(zeroR);
+    }
+    // =========================================================
+    // MAIN PROGRAM
+    // =========================================================
+    public static void main(String[] args) {
+        try {
+            // =================================================
+            // PART A - IRIS CLUSTERING
+            // =================================================
+            Instances iris =
+                    loadDataset("iris.arff");
+            System.out.println(
+                    "\n\n========== IRIS K-MEANS =========="
+            );
+            // k = 2
+            runKMeans(iris, 2);
+            // k = 3
+            runKMeans(iris, 3);
+            // k = 4
+            runKMeans(iris, 4);
+            // k = 5
+            runKMeans(iris, 5);
+            // EM
+            System.out.println(
+                    "\n\n========== IRIS EM =========="
+            );
+            runEM(iris);
+            // DBSCAN
+            System.out.println(
+                    "\n\n========== IRIS DBSCAN =========="
+            );
+            runDBSCAN(iris);
+            // =================================================
+            // PART A - GLASS
+            // =================================================
+            Instances glass =
+                    loadDataset("glass.arff");
+            System.out.println(
+                    "\n\n========== GLASS K-MEANS =========="
+            );
+            runKMeans(glass, 2);
+            runKMeans(glass, 3);
+            runKMeans(glass, 4);
+            runKMeans(glass, 5);
+            System.out.println(
+                    "\n\n========== GLASS EM =========="
+            );
+            runEM(glass);
+            System.out.println(
+                    "\n\n========== GLASS DBSCAN =========="
+            );
+            runDBSCAN(glass);
+            // =================================================
+            // PART B - SUPERMARKET ASSOCIATION RULES
+            // =================================================
+            Instances supermarket =
+                    loadDataset(
+                            "supermarket.arff"
+                    );
+            System.out.println(
+                    "\n\n========== APRIORI =========="
+            );
+            runApriori(supermarket);
+            System.out.println(
+                    "\n\n========== FP-GROWTH =========="
+            );
+            runFPGrowth(supermarket);
+            // =================================================
+            // PART B - IRIS J48
+            // =================================================
+            System.out.println(
+                    "\n\n========== IRIS J48 =========="
+            );
+            runJ48(iris);
+            // =================================================
+            // RANDOM FOREST
+            // =================================================
+            System.out.println(
+                    "\n\n========== IRIS RANDOM FOREST =========="
+            );
+            runRandomForest(iris);
+            // =================================================
+            // ZEROR
+            // =================================================
+            System.out.println(
+                    "\n\n========== IRIS ZEROR =========="
+            );
+            runZeroR(iris);
+            // =================================================
+            // FINISHED
+            // =================================================
+            System.out.println(
+                    "\n\n========================================"
+            );
+            System.out.println(
+                    "ALL EXPERIMENTS COMPLETED"
+            );
+            System.out.println(
+                    "========================================"
+            );
+        }
+        catch (Exception e) {
+            System.out.println(
+                    "\nERROR:"
+            );
+            e.printStackTrace();
+        }
+    }
+}
